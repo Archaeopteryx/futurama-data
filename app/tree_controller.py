@@ -32,12 +32,19 @@ def graph_data_for_uptime(closure_months):
 
 def get_uptime_stats(closure_months):
     from calendar import monthrange
-    days_in_month = [monthrange(*[ int(y) for y in x.split('-')])[1] for x in sorted(closure_months.keys())[-12:]]
-    total_hours = [closure_months[x]['total'].total_seconds() for x in sorted(closure_months.keys())[-12:]]
+    last_months_with_data = sorted(closure_months.keys())[-12:]
+    days_in_month = [monthrange(*[ int(y) for y in x.split('-')])[1] for x in last_months_with_data]
+    total_hours = [closure_months[x]['total'].total_seconds() for x in last_months_with_data]
     count = 0
     result = []
+    now = datetime.datetime.utcnow()
+    this_month = "%s-%s" % (now.year, now.month if now.month > 9 else "0%s" % now.month)
+    no_data_current_month = (last_months_with_data[-1] != this_month)
     for days in days_in_month:
-        total_secs = days * 24 * 60 * 60
+        if count < len(days_in_month) - 1 or no_data_current_month: # A month which already passed.
+	    total_secs = days * 24 * 60 * 60
+        else:
+            total_secs = datetime.timedelta(days = now.day - 1, hours = now.hour, minutes = now.minute).total_seconds()
         result.append(100 - ((total_hours[count]/total_secs) * 100))
         count = count + 1
 
